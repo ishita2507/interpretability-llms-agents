@@ -3,19 +3,36 @@
 # =========================
 import torch
 import json
+import torch.nn.functional as F
 from datasets import load_dataset
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
 # =========================
-# 2. Load BERT model
+# 2. Load model
 # =========================
-model_name = "bert-base-uncased"
+model_name = "unitary/toxic-bert"
 
 tokenizer = AutoTokenizer.from_pretrained(model_name)
-model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=2).to(device)
+model = AutoModelForSequenceClassification.from_pretrained(model_name).to(device)
 model.eval()
+
+# ✅ Get correct label mapping
+id2label = model.config.id2label
+label2id = model.config.label2id
+
+print("Label mapping:", id2label)
+
+# Dynamically find toxic / non-toxic indices
+toxic_index = None
+non_toxic_index = None
+
+for idx, label in id2label.items():
+    if "toxic" in label.lower():
+        toxic_index = idx
+    else:
+        non_toxic_index = idx
 
 # =========================
 # 3. Load dataset
@@ -33,11 +50,15 @@ def score_text(text):
 
     logits = outputs.logits[0]
 
-    # Assume index 1 = toxic
-    score = logits[1] - logits[0]
-    pred = "toxic" if score > 0 else "non-toxic"
+    # ✅ Convert to probabilities
+    probs = F.softmax(logits, dim=0)
 
-    return score.item(), pred
+    toxic_prob = probs[toxic_index].item()
+    non_toxic_prob = probs[non_toxic_index].item()
+
+    pred = "toxic" if toxic_prob > non_toxic_prob else "non-toxic"
+
+    return toxic_prob, pred
 
 # =========================
 # 5. Integrated Gradients
@@ -46,7 +67,6 @@ def integrated_gradients(text, steps=20):
     inputs = tokenizer(text, return_tensors="pt", truncation=True).to(device)
     input_ids = inputs["input_ids"]
 
-    # :fire: BERT embedding layer
     embed_layer = model.bert.embeddings.word_embeddings
 
     embeddings = embed_layer(input_ids).detach()
@@ -61,7 +81,7 @@ def integrated_gradients(text, steps=20):
         scaled.requires_grad_(True)
 
         outputs = model(inputs_embeds=scaled)
-        logits = outputs.logits[:, 1]  # toxic class
+        logits = outputs.logits[:, toxic_index]
 
         score = logits.sum()
 
@@ -85,13 +105,13 @@ results = []
 for item in data:
     text = item["text"]
 
-    score, pred = score_text(text)
+    toxic_prob, pred = score_text(text)
     tokens, attributions = integrated_gradients(text)
 
     results.append({
         "text": text,
         "prediction": pred,
-        "score": score,
+        "toxic_probability": toxic_prob,
         "tokens": tokens,
         "importance": attributions.tolist()
     })
