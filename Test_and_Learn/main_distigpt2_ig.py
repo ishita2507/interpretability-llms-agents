@@ -1,6 +1,4 @@
-# =========================
-# 1. Setup
-# =========================
+
 import torch
 import json
 from datasets import load_dataset
@@ -9,29 +7,27 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 # :white_check_mark: FIX 1: define device
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
-# =========================
-# 2. Load Model
-# =========================
+##Model
 model_name = "distilgpt2"
 
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 model = AutoModelForCausalLM.from_pretrained(model_name).to(device)  # :white_check_mark: FIX 2
 model.eval()
 
-# =========================
-# 3. Load Dataset
-# =========================
+
+# Load Dataset
+
 data = load_dataset("google/civil_comments")["test"].select(range(20))
 
-# =========================
-# 4. Prompt
-# =========================
+
+# Prompt
+
 def create_prompt(text):
     return f"Is this text toxic? Answer: {text}"
 
-# =========================
-# 5. Zero-shot scoring
-# =========================
+
+# Zero-shot scoring
+
 def score_text(text):
     prompt = create_prompt(text)
 
@@ -52,9 +48,9 @@ def score_text(text):
 
     return score.item(), pred
 
-# =========================
-# 6. Integrated Gradients
-# =========================
+
+# Integrated Gradients
+
 def integrated_gradients(text, steps=20):
     prompt = create_prompt(text)
 
@@ -94,9 +90,8 @@ def integrated_gradients(text, steps=20):
 
     return tokens, attributions.cpu().numpy()
 
-# =========================
-# 7. Run
-# =========================
+# Run
+
 results = []
 
 for item in data:
@@ -113,9 +108,9 @@ for item in data:
         "importance": attributions.tolist()
     })
 
-# =========================
-# 8. Save
-# =========================
+
+# Save
+
 with open("output_with_ig.json", "w") as f:
     json.dump(results, f, indent=4)
 
