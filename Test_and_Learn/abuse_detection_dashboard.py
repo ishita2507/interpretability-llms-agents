@@ -5,6 +5,7 @@ Run with: streamlit run abuse_detection_dashboard.py
 
 import streamlit as st
 import pandas as pd
+import plotly
 import plotly.graph_objects as go
 import plotly.express as px
 import numpy as np
