@@ -277,7 +277,7 @@ EXAMPLES = {
         "gemini_pro":   {"label": "Non-Toxic", "confidence": 91, "abuse_type": None, "severity": None},
         "gemini_lite":  {"label": "Non-Toxic", "confidence": 85, "abuse_type": None, "severity": None},
         "bert": {
-            "label": "Non-Toxic", "score": -0.1729,
+            "label": "Non-Toxic", "score": -0.1729, "confidence": 87,
             "tokens": [
                 ("@", 0.0143), ("rm", 0.0207), ("##ille", -0.0068), ("##r", -0.0043),
                 ("##10", 0.0153), ("##1", 0.0024), ("-", -0.0022), ("spoken", 0.0092),
@@ -295,7 +295,7 @@ EXAMPLES = {
             ]
         },
         "distilgpt2": {
-            "label": "Non-Toxic", "score": -1.1563,
+            "label": "Non-Toxic", "score": -1.1563, "confidence": 76,
             "tokens": [
                 ("@", -0.408), ("R", 0.265), ("m", -0.384), ("iller", -0.103),
                 ("101", 0.241), ("-", 0.451), ("Sp", -0.434), ("oken", 0.081),
@@ -321,7 +321,7 @@ EXAMPLES = {
         "gemini_pro":   {"label": "Non-Toxic", "confidence": 94, "abuse_type": None, "severity": None},
         "gemini_lite":  {"label": "Non-Toxic", "confidence": 89, "abuse_type": None, "severity": None},
         "bert": {
-            "label": "Toxic", "score": 0.2943,
+            "label": "Toxic", "score": 0.2943, "confidence": 73,
             "tokens": [
                 ("[", 0.0064), ("integrity", 0.0007), ("means", 0.012), ("that", 0.012),
                 ("you", 0.0362), ("pay", -0.0054), ("your", 0.0201), ("debts", -0.0252),
@@ -331,7 +331,7 @@ EXAMPLES = {
             ]
         },
         "distilgpt2": {
-            "label": "Toxic", "score": 0.1569,
+            "label": "Toxic", "score": 0.1569, "confidence": 62,
             "tokens": [
                 ("This", 0.492), ("is", -0.131), ("malf", 1.061), ("eas", -0.239),
                 ("ance", 0.502), ("by", 0.325), ("the", 1.333), ("Administrator", -1.132),
@@ -456,7 +456,7 @@ if st.session_state.analyzed:
 
         for name, model_id, data, color in models_display:
             label = data["label"]
-            conf = data.get("confidence") or int(abs(data.get("score", 0.5)) * 100)
+            conf = data.get("confidence", 75)
             conf = min(conf, 99)
             badge = verdict_badge(label)
             st.markdown(f"""
